@@ -70,10 +70,11 @@ def generate_logic_questions(text, num_questions=10):
             answer = "Unknown"
 
         questions.append({
-            "question": question,
-            "answer": answer.strip(),
-            "type": qtype
-        })
+        "question": question,
+        "answer": answer.strip(),
+        "type": qtype,
+        "justification": "Answer grounded in retrieved chunk."  # <-- Static placeholder or add actual chunk
+    })
 
     return questions
 
