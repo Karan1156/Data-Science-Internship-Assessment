@@ -5,7 +5,7 @@ import requests
 st.set_page_config(page_title="📄 GenAI Document Assistant", layout="wide")
 st.title("📄 GenAI Document Assistant")
 
-# Session variables
+# Session setup
 if "questions" not in st.session_state:
     st.session_state.questions = []
 if "feedback" not in st.session_state:
@@ -14,7 +14,7 @@ if "submitted" not in st.session_state:
     st.session_state.submitted = False
 
 # ============================
-# 📤 📝 ❓ Three Horizontal Columns
+# 🧰 Document Actions
 # ============================
 st.markdown("### 🧰 Document Actions")
 col1, col2, col3 = st.columns(3)
@@ -41,7 +41,7 @@ with col2:
         else:
             st.error("❌ Summary error: Please upload a document first.")
 
-# --------- Column 3: Ask a Question ---------
+# --------- Column 3: Ask ---------
 with col3:
     st.subheader("❓ Ask")
     question = st.text_input("Type your question...")
@@ -52,37 +52,43 @@ with col3:
         else:
             st.error("❌ Unable to answer. Upload document first.")
 
-# Divider
-st.markdown("---")
-
 # ============================
 # 🚀 Challenge Mode
 # ============================
+st.markdown("---")
 st.header("🚀 Challenge Mode")
 num_q = st.slider("How many questions to attempt?", 1, 25, 10)
 
 if st.button("Start Challenge"):
     res = requests.get("http://localhost:8000/api/challenge/")
     if res.status_code == 200:
-        st.session_state.questions = res.json().get("questions", [])[:num_q]
+        data = res.json()
+        sets = data.get("question_sets", [])
+        all_questions = []
+        for qset in sets:
+            all_questions.extend(qset.get("questions", []))
+
+        st.session_state.questions = all_questions[:num_q]
         st.session_state.feedback = []
         st.session_state.submitted = False
+
         st.success(f"✅ Loaded {len(st.session_state.questions)} questions.")
     else:
         st.error("❌ Could not start challenge.")
 
 # ============================
-# 🧪 Show Challenge Questions
+# 🧪 Display Questions
 # ============================
 if st.session_state.questions:
     st.markdown("### 🧪 Answer the questions below:")
 
     user_answers = []
     for i, q in enumerate(st.session_state.questions):
-        q_type = q.get("type", "question").title()
-        st.markdown(f"**Q{i+1} ({q_type}): {q['question']}**")
-        ans = st.text_input(f"Your Answer for Q{i+1}", key=f"user_answer_{i}")
-        user_answers.append(ans)
+        st.markdown(f"#### Q{i+1}: {q['question']}")
+        st.markdown(f"- **Type:** `{q.get('type', 'unknown')}`")
+        st.markdown(f"- **Source:** _{q.get('justification', 'No justification provided')}_")
+        user_input = st.text_input(f"Your Answer for Q{i+1}", key=f"user_answer_{i}")
+        user_answers.append(user_input)
 
     if st.button("📬 Submit Answers"):
         all_feedback = []
