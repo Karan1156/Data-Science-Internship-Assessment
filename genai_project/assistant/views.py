@@ -1,19 +1,19 @@
-# assistant/views.py
-
 import os
+import fitz
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
 from rest_framework import status
-import fitz
 
 from backend.utils import get_text_from_file
 from backend.summarizer import generate_summary
 from backend.qa_engine import get_chunks, create_vector_store, get_qa_chain, answer_question
-from backend.challenge import generate_logic_questions, evaluate_user_answer
+from backend.challenge import generate_logic_questions, generate_multiple_question_sets, evaluate_user_answer
 
-text_store = ""  # global variable to hold last uploaded document text
+# Global storage for uploaded document text
+text_store = ""
 
+# ------------------------ Upload Document ------------------------
 class UploadView(APIView):
     parser_classes = [MultiPartParser]
 
@@ -34,6 +34,7 @@ class UploadView(APIView):
 
         return Response({"message": "File uploaded and text extracted successfully."})
 
+# ------------------------ Generate Summary ------------------------
 class SummaryView(APIView):
     def get(self, request):
         if not text_store:
@@ -41,6 +42,7 @@ class SummaryView(APIView):
         summary = generate_summary(text_store)
         return Response({"summary": summary})
 
+# ------------------------ Ask Anything ------------------------
 class AskQuestionView(APIView):
     def post(self, request):
         question = request.data.get("question")
@@ -54,14 +56,7 @@ class AskQuestionView(APIView):
 
         return Response({"answer": answer})
 
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from backend.challenge import generate_logic_questions
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from backend.challenge import generate_logic_questions
-
+# ------------------------ Challenge Me (3 Sets x 3 Questions) ------------------------
 class ChallengeView(APIView):
     def get(self, request):
         global text_store
@@ -70,19 +65,23 @@ class ChallengeView(APIView):
             return Response({"error": "No document uploaded yet."}, status=400)
 
         try:
-            questions = generate_logic_questions(text_store, num_questions=15)
-            if not questions:
-                return Response({"error": "No questions could be generated from the text."}, status=400)
-
-            return Response({"questions": questions})
+            print("[ChallengeView] Generating multiple question sets...")
+            question_sets = generate_multiple_question_sets(text_store, num_sets=3, questions_per_set=3)
+            print(f"[ChallengeView] Generated sets: {len(question_sets)}")
+            return Response({"question_sets": question_sets})
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return Response({"error": str(e)}, status=500)
 
+# ------------------------ Evaluate User Answer ------------------------
 class EvaluateAnswerView(APIView):
     def post(self, request):
         question = request.data.get("question")
         answer = request.data.get("answer")
+
         if not question or not answer:
             return Response({"error": "Both question and answer are required."}, status=400)
+
         feedback = evaluate_user_answer(question, answer, text_store)
         return Response({"feedback": feedback})
