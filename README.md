@@ -85,3 +85,17 @@ Open a new terminal in the root project folder and run:
 ```bash
 streamlit run app.py
 ```
+---
+
+## ⚠️ Known Limitations
+
+While the GenAI Document Assistant performs well on structured documents, it still has a few areas for improvement:
+
+- 🔄 **Answer Evaluation:** The feedback logic for long or descriptive answers may not always align with human reasoning, especially on subjective content.
+- 🧠 **Challenge Question Depth:** Currently, challenge-mode questions are basic and rely on surface-level sentence structure.
+- 📄 **Model Behavior:** The Flan-T5 model sometimes generates repetitive answers or hallucinations, especially when context is insufficient.
+- 🧪 **Offline Accuracy:** Offline QA logic (lemmatization, POS tagging) may miss some multi-word or embedded concepts in technical docs.
+
+These limitations are being tracked for improvement via better prompt engineering, offline chunk filtering, and experimenting with different LLMs or hybrid retrieval pipelines.
+
+---
